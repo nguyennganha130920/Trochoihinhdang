@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bé Học Về Hình Dạngo</title>
+    <style>
+        :root { --red: #ff3d00; --yellow: #ffea00; --orange: #ff9100; --green: #00c853; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            display: flex; justify-content: center; align-items: center;
+            background: #e1f5fe; font-family: 'Arial', sans-serif; overflow: hidden;
+        }
+        .aspect-ratio-box {
+            width: 95vw; height: 53.44vw; max-width: 1100px; max-height: 618px;
+            background: white; border: 12px solid #4fc3f7; border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative;
+            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
+        }
+        h1 { color: #0277bd; margin: 0; font-size: 2rem; text-align: center; text-transform: uppercase; }
+        #question-box {
+            font-size: 2rem; margin: 15px auto; padding: 15px 60px;
+            background: #fff9c4; border: 4px solid #fdd835; border-radius: 50px;
+            font-weight: bold; color: #d84315; text-align: center; width: fit-content;
+        }
+        .game-content { display: flex; justify-content: center; align-items: center; flex-grow: 1; }
+        #shapes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; }
+        .shape { width: 140px; height: 140px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 8px 15px rgba(0,0,0,0.2)); }
+        .circle { background: var(--red); border-radius: 50%; }
+        .square { background: var(--yellow); border-radius: 15px; }
+        .rectangle { background: var(--green); width: 180px; height: 110px; border-radius: 10px; }
+        .triangle { width: 0; height: 0; border-left: 75px solid transparent; border-right: 75px solid transparent; border-bottom: 140px solid var(--orange); }
+        .pop { animation: pop 0.6s ease; }
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.6); } 100% { transform: scale(1); } }
+        .shake { animation: shake 0.4s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-15px); } 75% { transform: translateX(15px); } }
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.97); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; border-radius: 30px; z-index: 200;
+        }
+        button { padding: 20px 60px; font-size: 2rem; background: #0288d1; color: white; border: none; border-radius: 60px; cursor: pointer; box-shadow: 0 10px 0 #01579b; }
+        .hidden { display: none !important; }
+        .round-info { position: absolute; bottom: 20px; right: 40px; font-weight: bold; color: #546e7a; }
+    </style>
+</head>
+<body>
+
+<div class="aspect-ratio-box">
+    <h1>🎨 BÉ TÌM HÌNH Dạng 🎨</h1>
+    <div id="start-screen" class="overlay">
+        <p style="font-size: 1.8rem; color: #01579b; margin-bottom: 30px; font-weight: bold;">Bé lắng nghe và chọn hình đúng nhé!</p>
+        <button id="btnStart">BẮT ĐẦU</button>
+    </div>
+    <div id="game-ui" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+        <div id="question-box">Bé hãy tìm...</div>
+        <div class="game-content"><div id="shapes-grid"></div></div>
+        <div id="round-text" class="round-info">Câu hỏi: 1 / 8</div>
+    </div>
+    <div id="win-screen" class="overlay hidden">
+        <h2 style="font-size: 4rem; color: #388e3c;">🌟 XUẤT SẮC! 🌟</h2>
+        <button onclick="location.reload()">CHƠI LẠI</button>
+    </div>
+</div>
+
+<audio id="sndCorrect" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
+<audio id="sndWrong" src="https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3"></audio>
+<audio id="audio-circle" src=""C:\Users\DELL\Downloads\mp3-output-ttsfree(dot)com.mp3""></audio>
+<audio id="audio-square" src=""C:\Users\DELL\Downloads\mp3-output-ttsfree(dot)com (1).mp3""></audio>
+<audio id="audio-triangle" src=""C:\Users\DELL\Downloads\mp3-output-ttsfree(dot)com (2).mp3""></audio>
+<audio id="audio-rectangle" src=""C:\Users\DELL\Downloads\mp3-output-ttsfree(dot)com (3).mp3""></audio>
+
+<script>
+    const shapes = [{ id: "circle", name: "HÌNH TRÒN" }, { id: "square", name: "HÌNH VUÔNG" }, { id: "triangle", name: "HÌNH TAM GIÁC" }, { id: "rectangle", name: "HÌNH CHỮ NHẬT" }];
+    let sequence = [...shapes, ...shapes];
+    let round = 0;
+
+    document.getElementById("btnStart").onclick = function() {
+        document.querySelectorAll('audio').forEach(a => { a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
+        document.getElementById("start-screen").classList.add("hidden");
+        document.getElementById("game-ui").classList.remove("hidden");
+        nextRound();
+    };
+
+    function nextRound() {
+        if (round === 8) {
+            document.getElementById("game-ui").classList.add("hidden");
+            document.getElementById("win-screen").classList.remove("hidden");
+            return;
+        }
+        let target = sequence[round];
+        document.getElementById("question-box").innerText = "Bé hãy tìm: " + target.name;
+        document.getElementById("round-text").innerText = `Câu hỏi: ${round + 1} / 8`;
+        setTimeout(() => { 
+            let v = document.getElementById("audio-" + target.id);
+            if(v) v.play().catch(() => {});
+        }, 300);
+
+        const grid = document.getElementById("shapes-grid");
+        grid.innerHTML = "";
+        [...shapes].sort(() => Math.random() - 0.5).forEach(item => {
+            let div = document.createElement("div");
+            div.className = "shape " + item.id;
+            div.onclick = function() {
+                if (item.id === target.id) {
+                    document.getElementById("sndCorrect").play();
+                    div.classList.add("pop");
+                    setTimeout(() => { round++; nextRound(); }, 3500);
+                } else {
+                    document.getElementById("sndWrong").play();
+                    div.classList.add("shake");
+                    setTimeout(() => div.classList.remove("shake"), 400);
+                }
+            };
+            grid.appendChild(div);
+        });
+    }
+</script>
+</body>
+</html>
